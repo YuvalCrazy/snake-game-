@@ -3,8 +3,10 @@ package com.example.snakegame;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -56,8 +58,12 @@ public class MainActivity extends AppCompatActivity {
                                 if (task.isSuccessful()) {
                                     FirebaseUser user = mAuth.getCurrentUser();
                                     saveUserUID(user.getUid());
+                                    Log.d("Login", "Login Successful.");
                                     Toast.makeText(MainActivity.this, "Login Successful.", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(MainActivity.this,leaderboard.class);
+                                    startActivity(intent);
                                 } else {
+                                    Log.d("Login","Login Failed: " + task.getException().getMessage());
                                     Toast.makeText(MainActivity.this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                                 }
                             }
@@ -101,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(DocumentReference documentReference) {
                         // Message saved successfully
+                        Log.d("Login", "Message saved!");
                         Toast.makeText(getApplicationContext(), "Message saved!", Toast.LENGTH_SHORT).show();
                     }
                 })
@@ -108,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         // Failed to save message
+                        Log.d("Login", "Error saving message:");
                         Toast.makeText(getApplicationContext(), "Error saving message: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
@@ -131,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
                             // Show the messages in a TextView or a Toast
                             Toast.makeText(getApplicationContext(), messages.toString(), Toast.LENGTH_LONG).show();
                         } else {
+                            Log.d("Login","Login Failed: " + task.getException().getMessage());
                             Toast.makeText(getApplicationContext(), "Error getting messages: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                         }
                     }
