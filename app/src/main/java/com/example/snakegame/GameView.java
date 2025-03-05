@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -16,11 +17,15 @@ import java.util.Random;
 import java.util.Stack;
 
 public class GameView extends View {
+    private  enum Direction {
+        up,down,left,right
+    }
     private Cell[][] cells;
+    private Cell player,exit;
     private static final int COLS = 7, ROWS = 10;
 
     private float cellSize, hMargin, vMargin;
-    private Paint wallPaint;
+    private Paint wallPaint,playerPaint,exitPaint;
     private static final float WALL_THICKNESS = 4;
     private Random random;
 
@@ -31,6 +36,11 @@ public class GameView extends View {
         wallPaint.setColor(Color.BLACK);
         wallPaint.setStrokeWidth(WALL_THICKNESS);
         random = new Random();
+        playerPaint = new Paint();
+        playerPaint.setColor(Color.RED);
+        exitPaint= new Paint();
+        exitPaint.setColor(Color.BLUE);
+
 
         createMaze();
     }
@@ -87,6 +97,8 @@ public class GameView extends View {
                 cells[x][y] = new Cell(x, y);
             }
         }
+        player =cells[0][0];
+        exit =cells[COLS-1][ROWS-1];
 
         current = cells[0][0];
         current.visited = true;
@@ -105,6 +117,39 @@ public class GameView extends View {
         }
 
         postInvalidate(); // Refresh view after maze is created
+    }
+    private void moveplayer(Direction direction)
+    {
+        switch (direction)
+        {
+            case up:
+                if(!player.topWall)
+                {
+                    player =cells[player.col][player.row-1];
+                }
+
+                break;
+            case down:
+                if(!player.bottomWall)
+                {
+                    player =cells[player.col][player.row+1];
+                }
+                break;
+            case left:
+                if(!player.leftWall)
+                {
+                    player =cells[player.col-1][player.row];
+                }
+                break;
+            case right:
+                if(!player.rightWall)
+                {
+                    player =cells[player.col+1][player.row];
+                }
+                break;
+        }
+        invalidate();
+
     }
 
     @Override
@@ -147,6 +192,61 @@ public class GameView extends View {
                 }
             }
         }
+        float margin =cellSize/10;
+
+        canvas.drawRect(player.col*cellSize+margin,player.row*cellSize+margin,(player.col+1)*cellSize-margin,(player.row+1)*cellSize-margin,playerPaint);
+        canvas.drawRect(exit.col*cellSize+margin,exit.row*cellSize+margin,(exit.col+1)*cellSize-margin,(exit.row+1)*cellSize-margin,exitPaint);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if(event.getAction() == MotionEvent.ACTION_DOWN )
+        {
+            return  true;
+        }
+        if(event.getAction() == MotionEvent.ACTION_MOVE)
+        {
+            float x = event.getX();
+            float y =event.getY();
+            float playerCenterX =hMargin +(player.col+0.5f)*cellSize;
+            float playerCentery =vMargin +(player.row+0.5f)*cellSize;
+
+            float dx =x -playerCenterX;
+            float dy =y -playerCentery;
+            float absDx =Math.abs(dx);
+            float absDy =Math.abs(dy);
+            if(absDx > cellSize || absDy >cellSize)
+            {
+                if(absDx > absDy)
+                {
+                    //move x direction
+                    if(dx >0)
+                    {
+                        moveplayer(Direction.right);
+                    }
+                    else
+                    {
+                        moveplayer(Direction.left);
+                    }
+                }
+                else
+                {
+                    //move y direction
+                    if(dy >0)
+                    {
+                        moveplayer(Direction.down);
+                    }
+                    else
+                    {
+                        moveplayer(Direction.up);
+                    }
+
+                }
+            }
+            return true;
+
+        }
+        return super.onTouchEvent(event);
     }
 
     private static class Cell {
