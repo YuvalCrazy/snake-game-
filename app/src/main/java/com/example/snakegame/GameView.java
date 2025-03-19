@@ -8,6 +8,8 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.os.CountDownTimer;
+
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,6 +22,10 @@ public class GameView extends View {
     private  enum Direction {
         up,down,left,right
     }
+    private CountDownTimer countDownTimer;
+    private long timeLeftInMillis = 60 * 1000; // 60 seconds
+    private Paint timerPaint;
+
     private Cell[][] cells;
     private Cell player,exit;
     private static final int COLS = 7, ROWS = 10;
@@ -41,9 +47,36 @@ public class GameView extends View {
         exitPaint= new Paint();
         exitPaint.setColor(Color.BLUE);
 
+        //  Initialize Timer Paint
+        timerPaint = new Paint();
+        timerPaint.setColor(Color.rgb(144, 238, 144)); // Light green color
+        timerPaint.setTextSize(48);                    // Font size
+        timerPaint.setTextAlign(Paint.Align.LEFT);     // Align text to the left
 
+
+        startTimer();
         createMaze();
     }
+
+    private void startTimer() {
+        countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) { // 1000ms = 1 second
+            @Override
+            public void onTick(long millisUntilFinished) {
+                timeLeftInMillis = millisUntilFinished; // Update remaining time
+                invalidate(); // Redraw the screen to update the timer display
+            }
+
+            @Override
+            public void onFinish() {
+                // Timer finished - Handle game over or time's up logic here
+                Log.d("GameView", "Time's up!");
+                // You can trigger a game over or stop the game here
+            }
+        };
+
+        countDownTimer.start(); // This starts the timer
+    }
+
 
     private Cell getNeighbour(Cell cell) {
         ArrayList<Cell> neighbours = new ArrayList<>();
@@ -172,6 +205,8 @@ public class GameView extends View {
         hMargin = (width - COLS * cellSize) / 2;
         vMargin = (height - ROWS * cellSize) / 2;
         canvas.translate(hMargin, vMargin);
+
+        canvas.drawText("Time Left: " + (timeLeftInMillis / 1000) + "s", hMargin, vMargin - 20, timerPaint);
 
         // Draw the maze walls
         for (int x = 0; x < COLS; x++) {
