@@ -1,5 +1,7 @@
 package com.example.snakegame;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -10,7 +12,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.os.CountDownTimer;
 
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -19,19 +20,22 @@ import java.util.Random;
 import java.util.Stack;
 
 public class GameView extends View {
-    private  enum Direction {
-        up,down,left,right
+    private enum Direction {
+        up, down, left, right
     }
+
     private CountDownTimer countDownTimer;
     private long timeLeftInMillis = 60 * 1000; // 60 seconds
     private Paint timerPaint;
+    private boolean gameOver = false;  // Game over flag
+    private boolean gameWon = false;   // Game won flag
 
     private Cell[][] cells;
-    private Cell player,exit;
+    private Cell player, exit;
     private static final int COLS = 7, ROWS = 10;
 
     private float cellSize, hMargin, vMargin;
-    private Paint wallPaint,playerPaint,exitPaint;
+    private Paint wallPaint, playerPaint, exitPaint;
     private static final float WALL_THICKNESS = 4;
     private Random random;
 
@@ -44,38 +48,58 @@ public class GameView extends View {
         random = new Random();
         playerPaint = new Paint();
         playerPaint.setColor(Color.RED);
-        exitPaint= new Paint();
+        exitPaint = new Paint();
         exitPaint.setColor(Color.BLUE);
 
-        //  Initialize Timer Paint
+        // Initialize Timer Paint
         timerPaint = new Paint();
-        timerPaint.setColor(Color.rgb(144, 238, 144)); // Light green color
-        timerPaint.setTextSize(48);                    // Font size
-        timerPaint.setTextAlign(Paint.Align.LEFT);     // Align text to the left
-
+        timerPaint.setColor(Color.BLACK); // Set text color to black
+        timerPaint.setTextSize(96); // Larger font size (adjust as necessary)
+        timerPaint.setTextAlign(Paint.Align.LEFT); // Align text to the left
 
         startTimer();
         createMaze();
     }
 
     private void startTimer() {
-        countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) { // 1000ms = 1 second
+        countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-                timeLeftInMillis = millisUntilFinished; // Update remaining time
+                timeLeftInMillis = millisUntilFinished;
+
+                // Change timer color when 10 seconds or less remain
+                if (timeLeftInMillis <= 10000) {
+                    timerPaint.setColor(Color.RED);  // Urgent countdown
+                } else {
+                    timerPaint.setColor(Color.BLACK);  // Default color
+                }
+
                 invalidate(); // Redraw the screen to update the timer display
             }
 
             @Override
             public void onFinish() {
-                // Timer finished - Handle game over or time's up logic here
-                Log.d("GameView", "Time's up!");
-                // You can trigger a game over or stop the game here
+                gameOver = true;
+                invalidate(); // Redraw screen to show Game Over
             }
         };
 
-        countDownTimer.start(); // This starts the timer
+        countDownTimer.start();
     }
+    public void restartGame() {
+        createMaze();            // Regenerate maze
+        player = cells[0][0];    // Reset player position
+        gameOver = false;        // Clear game over flag
+        gameWon = false;         // Clear victory flag
+        timeLeftInMillis = 60 * 1000;  // Reset timer to 60 seconds
+
+        if (countDownTimer != null) {
+            countDownTimer.cancel(); // Cancel previous timer
+        }
+        startTimer();            // Restart timer
+        invalidate();            // Redraw the game screen
+    }
+
 
 
     private Cell getNeighbour(Cell cell) {
@@ -130,8 +154,8 @@ public class GameView extends View {
                 cells[x][y] = new Cell(x, y);
             }
         }
-        player =cells[0][0];
-        exit =cells[COLS-1][ROWS-1];
+        player = cells[0][0];
+        exit = cells[COLS - 1][ROWS - 1];
 
         current = cells[0][0];
         current.visited = true;
@@ -151,38 +175,40 @@ public class GameView extends View {
 
         postInvalidate(); // Refresh view after maze is created
     }
-    private void moveplayer(Direction direction)
-    {
-        switch (direction)
-        {
-            case up:
-                if(!player.topWall)
-                {
-                    player =cells[player.col][player.row-1];
-                }
 
+    private void movePlayer(Direction direction) {
+        if (gameOver || gameWon) return;  // Do nothing if the game is over or won
+
+        switch (direction) {
+            case up:
+                if (!player.topWall) {
+                    player = cells[player.col][player.row - 1];
+                }
                 break;
             case down:
-                if(!player.bottomWall)
-                {
-                    player =cells[player.col][player.row+1];
+                if (!player.bottomWall) {
+                    player = cells[player.col][player.row + 1];
                 }
                 break;
             case left:
-                if(!player.leftWall)
-                {
-                    player =cells[player.col-1][player.row];
+                if (!player.leftWall) {
+                    player = cells[player.col - 1][player.row];
                 }
                 break;
             case right:
-                if(!player.rightWall)
-                {
-                    player =cells[player.col+1][player.row];
+                if (!player.rightWall) {
+                    player = cells[player.col + 1][player.row];
                 }
                 break;
         }
-        invalidate();
 
+        // Check if the player reached the exit
+        if (player == exit) {
+            gameWon = true;
+            countDownTimer.cancel(); // Stop the timer when the game is won
+        }
+
+        invalidate();  // Redraw the view
     }
 
     @Override
@@ -202,11 +228,20 @@ public class GameView extends View {
             cellSize = height / (ROWS + 1);
         }
 
+        // Set horizontal margin for centering the maze
         hMargin = (width - COLS * cellSize) / 2;
-        vMargin = (height - ROWS * cellSize) / 2;
-        canvas.translate(hMargin, vMargin);
 
-        canvas.drawText("Time Left: " + (timeLeftInMillis / 1000) + "s", hMargin, vMargin - 20, timerPaint);
+        // Calculate the height of the timer text using the Paint object
+        float timerHeight = timerPaint.getTextSize() * 1.5f; // Make it slightly bigger than the text size
+
+        // Set vertical margin for centering the maze, but with additional space for the timer
+        vMargin = (height - ROWS * cellSize - timerHeight) / 2; // Space for the timer above
+
+        // Draw the timer above the maze
+        canvas.drawText("Time Left: " + (timeLeftInMillis / 1000) + "s", hMargin, vMargin - 20, timerPaint); // Draw timer
+
+        // Adjust the translate for maze drawing: shift the maze down by the timer height
+        canvas.translate(hMargin, vMargin + timerHeight);
 
         // Draw the maze walls
         for (int x = 0; x < COLS; x++) {
@@ -227,59 +262,66 @@ public class GameView extends View {
                 }
             }
         }
-        float margin =cellSize/10;
 
-        canvas.drawRect(player.col*cellSize+margin,player.row*cellSize+margin,(player.col+1)*cellSize-margin,(player.row+1)*cellSize-margin,playerPaint);
-        canvas.drawRect(exit.col*cellSize+margin,exit.row*cellSize+margin,(exit.col+1)*cellSize-margin,(exit.row+1)*cellSize-margin,exitPaint);
+        // Draw player and exit
+        float margin = cellSize / 10;
+        canvas.drawRect(player.col * cellSize + margin, player.row * cellSize + margin,
+                (player.col + 1) * cellSize - margin, (player.row + 1) * cellSize - margin, playerPaint);
+        canvas.drawRect(exit.col * cellSize + margin, exit.row * cellSize + margin,
+                (exit.col + 1) * cellSize - margin, (exit.row + 1) * cellSize - margin, exitPaint);
+
+        // If game over or won, stop the game and show message
+        if (gameOver || gameWon) {
+            showEndGamePopup(gameWon); // Trigger pop-up for the end game scenario
+        }
     }
+    private void showEndGamePopup(boolean isWin) {
+        // Create and show the pop-up dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(isWin ? "You Win!" : "Game Over") // Set title based on win/lose
+                .setMessage("Would you like to restart?")
+                .setPositiveButton("Restart", (dialog, which) -> restartGame()) // Restart the game
+                .setNegativeButton("Exit", (dialog, which) -> ((Activity) getContext()).finish()) // Exit the game
+                .setCancelable(false) // Disable dismissing by tapping outside
+                .show();
+    }
+
+
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(event.getAction() == MotionEvent.ACTION_DOWN )
-        {
-            return  true;
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            return true;
         }
-        if(event.getAction() == MotionEvent.ACTION_MOVE)
-        {
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
             float x = event.getX();
-            float y =event.getY();
-            float playerCenterX =hMargin +(player.col+0.5f)*cellSize;
-            float playerCentery =vMargin +(player.row+0.5f)*cellSize;
+            float y = event.getY();
+            float playerCenterX = hMargin + (player.col + 0.5f) * cellSize;
+            float playerCentery = vMargin + (player.row + 0.5f) * cellSize;
 
-            float dx =x -playerCenterX;
-            float dy =y -playerCentery;
-            float absDx =Math.abs(dx);
-            float absDy =Math.abs(dy);
-            if(absDx > cellSize || absDy >cellSize)
-            {
-                if(absDx > absDy)
-                {
-                    //move x direction
-                    if(dx >0)
-                    {
-                        moveplayer(Direction.right);
+            float dx = x - playerCenterX;
+            float dy = y - playerCentery;
+            float absDx = Math.abs(dx);
+            float absDy = Math.abs(dy);
+            if (absDx > cellSize || absDy > cellSize) {
+                if (absDx > absDy) {
+                    // move x direction
+                    if (dx > 0) {
+                        movePlayer(Direction.right);
+                    } else {
+                        movePlayer(Direction.left);
                     }
-                    else
-                    {
-                        moveplayer(Direction.left);
+                } else {
+                    // move y direction
+                    if (dy > 0) {
+                        movePlayer(Direction.down);
+                    } else {
+                        movePlayer(Direction.up);
                     }
-                }
-                else
-                {
-                    //move y direction
-                    if(dy >0)
-                    {
-                        moveplayer(Direction.down);
-                    }
-                    else
-                    {
-                        moveplayer(Direction.up);
-                    }
-
                 }
             }
             return true;
-
         }
         return super.onTouchEvent(event);
     }
