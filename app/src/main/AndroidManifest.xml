@@ -16,11 +16,15 @@
             android:name=".game"
             android:exported="false" />
         <activity
-            android:name=".level"
-            android:exported="false" />
+            android:name=".LevelActivity"
+            android:exported="false" >
+
+        </activity>
         <activity
             android:name=".leaderboard"
-            android:exported="false" />
+            android:exported="false" >
+
+        </activity>
         <activity
             android:name=".MainActivity"
             android:exported="true">
