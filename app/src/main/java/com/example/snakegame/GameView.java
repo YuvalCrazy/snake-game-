@@ -40,7 +40,7 @@ public class GameView extends View {
     private static int COLS = 7;
     private static int ROWS = 10;
     private int currentLevel = 1; // Track current level
-    private int mazeCount = 0;    // Track maze count within level
+    private int mazeCount = 0;;    // Track maze count within level
 
 
     private float cellSize, hMargin, vMargin;
