@@ -24,18 +24,25 @@ public class FirebaseScoreManager {
     }
 
     // Save score for the user and update leaderboard
-    public void saveScore(final String level, final String newTime) {
+    public void saveScore(final String level, final String timeSpent) {
         FirebaseUser currentUser = auth.getCurrentUser();
 
         if (currentUser != null) {
             String email = currentUser.getEmail();
-            if (email != null) {
-                String username = email.replace(".", "_");  // Firebase-safe username
-                Log.d("FirebaseScoreManager", "Saving score for username: " + username);  // Log the username being used
+            Log.d("FirebaseScoreManager", "Current user: " + email);
 
-                // Proceed to update player score and leaderboard
-                updatePlayerScore(username, level, newTime);  // Save user score
-                updateLeaderboard(level, username, newTime);  // Update global leaderboard
+            if (email != null) {
+                String userId = email.replace(".", "_");  // Firebase-safe username
+                Log.d("FirebaseScoreManager", "Saving score for user: " + userId);
+
+                // Convert the timeSpent string to milliseconds
+                long timeSpentInMillis = timeToMilliseconds(timeSpent);
+
+                // Save the user score for this level under "scores"
+                updateUserScore(userId, level, timeSpentInMillis);
+
+                // Update the leaderboard (if needed)
+                updateLeaderboard(level, userId, timeSpentInMillis);
             } else {
                 Log.e("FirebaseScoreManager", "User email is null.");
             }
@@ -44,104 +51,60 @@ public class FirebaseScoreManager {
         }
     }
 
+    // Convert time from "MM:SS" format to milliseconds
+    private long timeToMilliseconds(String time) {
+        try {
+            String[] parts = time.split(":");
+            int minutes = Integer.parseInt(parts[0]);
+            int seconds = Integer.parseInt(parts[1]);
+            return (minutes * 60 + seconds) * 1000L;
+        } catch (Exception e) {
+            Log.e("FirebaseScoreManager", "Invalid time format: " + time);
+            return 0;
+        }
+    }
 
-    private void updatePlayerScore(final String username, final String level, final String newTime) {
-        DatabaseReference userScoreRef = database.child("scores").child(username).child(level);
+    // Save user-specific score for the level
+    private void updateUserScore(String userId, String level, long timeSpent) {
+        DatabaseReference scoreRef = database.child("scores").child(userId).child("level_" + level).child("timeSpent");
 
-        userScoreRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                String existingTime = dataSnapshot.child("score").getValue(String.class);
+        Log.d("FirebaseScoreManager", "Writing to: scores/" + userId + "/level_" + level + "/timeSpent = " + timeSpent);
 
-                // If the time exists, compare it
-                if (existingTime != null) {
-                    int comparison = compareTimes(existingTime, newTime);
-                    if (comparison < 0) {
-                        // New time is better (lower), update the score and save the username
-                        userScoreRef.child("score").setValue(newTime);
-                        userScoreRef.child("username").setValue(username); // Ensure username is saved
-                    } else if (comparison > 0) {
-                        // New time is worse (higher), do nothing
-                        Log.d("FirebaseScoreManager", "New time is worse, no update.");
-                    } else {
-                        // Times are the same, do nothing
-                        Log.d("FirebaseScoreManager", "Times are the same, no update.");
-                    }
-                } else {
-                    // No existing score, save the new score and username
-                    userScoreRef.child("score").setValue(newTime);
-                    userScoreRef.child("username").setValue(username); // Ensure username is saved
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.e("FirebaseScoreManager", "Database error: " + databaseError.getMessage());
+        scoreRef.setValue(timeSpent, (databaseError, databaseReference) -> {
+            if (databaseError != null) {
+                Log.e("FirebaseScoreManager", "Data write failed: " + databaseError.getMessage());
+            } else {
+                Log.d("FirebaseScoreManager", "User score saved successfully.");
             }
         });
     }
 
+    // Update global leaderboard (if necessary)
+    private void updateLeaderboard(final String level, final String userId, final long timeSpent) {
+        final DatabaseReference leaderboardRef = database.child("best_scores").child("level_" + level);
 
-
-    // Update leaderboard to reflect the best score for the level
-    // Update leaderboard to reflect the best score for the level
-    private void updateLeaderboard(final String level, final String username, final String newTime) {
-        final DatabaseReference leaderboardRef = database.child("best_scores").child(level);
-
-        leaderboardRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        leaderboardRef.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                boolean updated = false;
+            public void onDataChange(DataSnapshot snapshot) {
+                Long existingTime = snapshot.getValue(Long.class);
 
-                // Iterate through existing leaderboard to check if the user is already in the leaderboard
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    String existingUsername = snapshot.getKey();
-                    String existingTime = snapshot.getValue(String.class);
-
-                    if (existingUsername != null && existingTime != null && existingUsername.equals(username)) {
-                        // Compare the times
-                        int comparison = compareTimes(existingTime, newTime);
-                        if (comparison < 0) {
-                            // New time is better, update the leaderboard
-                            leaderboardRef.child(username).setValue(newTime);
-                            updated = true;
-                        } else if (comparison > 0) {
-                            // New time is worse, do nothing
-                            Log.d("FirebaseScoreManager", "New time is worse, no update in leaderboard.");
+                if (existingTime == null || existingTime > timeSpent) {
+                    leaderboardRef.child(userId).setValue(timeSpent, (databaseError, databaseReference) -> {
+                        if (databaseError != null) {
+                            Log.e("FirebaseScoreManager", "Leaderboard update failed: " + databaseError.getMessage());
                         } else {
-                            // Times are the same, do nothing
-                            Log.d("FirebaseScoreManager", "Times are the same, no update in leaderboard.");
+                            Log.d("FirebaseScoreManager", "Leaderboard updated with new/better time.");
                         }
-                        break;
-                    }
-                }
-
-                if (!updated) {
-                    // If user was not in the leaderboard, add them
-                    leaderboardRef.child(username).setValue(newTime);
+                    });
+                } else {
+                    Log.d("FirebaseScoreManager", "New time is not better. Leaderboard unchanged.");
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                Log.e("FirebaseScoreManager", "Database error: " + databaseError.getMessage());
+                Log.e("FirebaseScoreManager", "Error reading leaderboard: " + databaseError.getMessage());
             }
         });
-    }
-
-
-    // Helper method to compare two times in "MM:SS" format
-    private int compareTimes(String time1, String time2) {
-        int time1InSeconds = timeToSeconds(time1);
-        int time2InSeconds = timeToSeconds(time2);
-        return Integer.compare(time1InSeconds, time2InSeconds);
-    }
-
-    // Convert time from "MM:SS" format to seconds
-    private int timeToSeconds(String time) {
-        String[] parts = time.split(":");
-        int minutes = Integer.parseInt(parts[0]);
-        int seconds = Integer.parseInt(parts[1]);
-        return minutes * 60 + seconds;
     }
 }

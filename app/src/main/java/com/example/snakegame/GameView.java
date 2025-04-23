@@ -17,6 +17,8 @@ import android.os.CountDownTimer;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -31,6 +33,8 @@ public class GameView extends View {
 
     private CountDownTimer countDownTimer;
     private long timeLeftInMillis = 60 * 1000; // 60 seconds
+    private static final long TOTAL_TIME = 60 * 1000; // Used to calculate time spent
+
     private Paint timerPaint;
     private boolean gameOver = false;  // Game over flag
     private boolean gameWon = false;   // Game won flag
@@ -40,7 +44,7 @@ public class GameView extends View {
     private static int COLS = 7;
     private static int ROWS = 10;
     private int currentLevel = 1; // Track current level
-    private int mazeCount = 0;  // Track maze count within level
+    private int mazeCount = 0;    // Track maze count within level
 
 
     private float cellSize, hMargin, vMargin;
@@ -119,35 +123,41 @@ public class GameView extends View {
             mazeCount++;  // Increment maze count
 
             if (mazeCount == 3) {  // After completing all 3 mazes
-                // Level complete, stop the timer
-                countDownTimer.cancel();  // Stop the timer only when all 3 mazes are completed
-
-                // Save the time for the level
+                countDownTimer.cancel();  // Stop timer
                 saveLevelTimer();
 
-                // Transition to LevelActivity after completing all mazes in the level
+                currentLevel++;  // <--- Increment level
+                mazeCount = 0;   // <--- Reset maze count
+
+                adjustMazeSize();  // <--- Adjust maze size for new level
+
+                // Start new level
                 Intent intent = new Intent(getContext(), LevelActivity.class);
-                intent.putExtra("timeSpent", timeLeftInMillis);  // Pass the time left for the current level
-                intent.putExtra("currentLevel", currentLevel);  // Pass the current level
-                getContext().startActivity(intent);  // Transition to LevelActivity
-                return;  // Exit early to prevent restarting the game
+                intent.putExtra("timeSpent", timeLeftInMillis);
+                intent.putExtra("currentLevel", currentLevel);
+                getContext().startActivity(intent);
+                return;
             }
 
-            // If not the final maze, continue to the next maze in the same level
-            adjustMazeSize(); // Adjust maze size based on the level
+            // Continue to next maze in same level
+            adjustMazeSize();
             createMaze();
             player = cells[0][0];
             gameOver = false;
             gameWon = false;
-
-            invalidate();  // Redraw the screen to reflect the new maze
+            startTimer();  // <--- Reset the timer for the new maze
+            invalidate();
         }
     }
 
 
 
 
+
     private void showFinalVictoryPopup() {
+        // Save the level time before showing the final victory popup
+        saveLevelTimer();
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Congratulations!")
                 .setMessage("You've completed all 10 levels!")
@@ -163,24 +173,68 @@ public class GameView extends View {
                 .setCancelable(false)  // Disable dismissing by tapping outside
                 .show();
     }
+
     private void saveLevelTimer() {
-        // Initialize Firebase Realtime Database
-        FirebaseDatabase database = FirebaseDatabase.getInstance("https://snake-login-10f36-default-rtdb.europe-west1.firebasedatabase.app");
-        DatabaseReference ref = database.getReference("levels");  // Reference to the "levels" node in Firebase
+        long timeSpentMillis = TOTAL_TIME - timeLeftInMillis;
+        String formattedTime = formatTime(timeSpentMillis);
 
-        // Create a LevelData object to hold the level and timer information
-        LevelData levelData = new LevelData(currentLevel, timeLeftInMillis);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
 
-        // Save the level data to Firebase Realtime Database
-        ref.child(String.valueOf(currentLevel)).setValue(levelData)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Log.d("Firebase", "Level data saved successfully for Level " + currentLevel);
-                    } else {
-                        Log.d("Firebase", "Failed to save level data.");
-                    }
-                });
+        String email = user.getEmail();
+        if (email == null) return;
+
+        // Derive username from the email (this example replaces '.' with '_')
+        String formattedUsername = email.replace(".", "_");
+
+        String levelKey = "Level_" + currentLevel;
+
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+
+        // Save to "scores"
+        database.child("scores").child(formattedUsername).child(levelKey).child("score")
+                .setValue(formattedTime);
+
+        // Save to "best_scores" only if it's better
+        DatabaseReference bestScoreRef = database.child("best_scores").child(levelKey).child(formattedUsername);
+
+        bestScoreRef.get().addOnSuccessListener(snapshot -> {
+            if (!snapshot.exists()) {
+                // No previous best score, so set this one
+                bestScoreRef.setValue(formattedTime);
+            } else {
+                String previousTime = snapshot.getValue(String.class);
+                if (previousTime != null && isBetterTime(formattedTime, previousTime)) {
+                    bestScoreRef.setValue(formattedTime);
+                }
+            }
+        });
     }
+
+    // Converts milliseconds into a formatted string (e.g., "1:23")
+    private String formatTime(long millis) {
+        long seconds = millis / 1000;
+        long minutes = seconds / 60;
+        seconds = seconds % 60;
+        return String.format("%d:%02d", minutes, seconds);
+    }
+
+    // Compares two time strings formatted as "m:ss"
+// Returns true if 'newTime' is better (i.e., less) than 'oldTime'
+    private boolean isBetterTime(String newTime, String oldTime) {
+        String[] newParts = newTime.split(":");
+        String[] oldParts = oldTime.split(":");
+
+        int newMinutes = Integer.parseInt(newParts[0]);
+        int newSeconds = Integer.parseInt(newParts[1]);
+        int oldMinutes = Integer.parseInt(oldParts[0]);
+        int oldSeconds = Integer.parseInt(oldParts[1]);
+
+        return (newMinutes < oldMinutes) || (newMinutes == oldMinutes && newSeconds < oldSeconds);
+    }
+
+
+
 
 
 
@@ -290,20 +344,25 @@ public class GameView extends View {
         if (player == exit) {
             gameWon = true;
 
-            // Only cancel the timer if it's the 3rd maze completed
-            if (mazeCount == 2) { // This is the 3rd maze
-                countDownTimer.cancel();  // Stop the timer only after the final maze is completed
-                saveLevelTimer(); // Save time for the level
-                // Show level complete screen or proceed to next activity
-                showLevelCompleteScreen();
+            if (currentLevel == 10 && mazeCount == 2) {
+                // Final maze of the final level
+                countDownTimer.cancel();
+                saveLevelTimer(); // Save the final level's time
+                showFinalVictoryPopup(); // Show the final victory pop-up
+            } else if (mazeCount == 2) {
+                // Third maze but not the final level
+                countDownTimer.cancel();
+                saveLevelTimer(); // Save the score for the current level
+                showLevelCompleteScreen(); // Show regular level completion screen
             } else {
-                // Proceed to next maze without canceling the timer
+                // Proceed to the next maze within the same level
                 restartGame();
             }
         }
 
         invalidate();  // Redraw the screen
     }
+
     private void showLevelCompleteScreen() {
         // Save the time spent on the current level
         saveLevelTimer();
