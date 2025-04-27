@@ -29,27 +29,38 @@ public class FirebaseScoreManager {
 
         if (currentUser != null) {
             String email = currentUser.getEmail();
-            Log.d("FirebaseScoreManager", "Current user: " + email);
 
-            if (email != null) {
+            // Check if email is not null or empty
+            if (email != null && !email.isEmpty()) {
+                Log.d("FirebaseScoreManager", "Current user: " + email);
+
                 String userId = email.replace(".", "_");  // Firebase-safe username
                 Log.d("FirebaseScoreManager", "Saving score for user: " + userId);
 
-                // Convert the timeSpent string to milliseconds
+                // Convert the timeSpent string to milliseconds, with validation
                 long timeSpentInMillis = timeToMilliseconds(timeSpent);
 
-                // Save the user score for this level under "scores"
-                updateUserScore(userId, level, timeSpentInMillis);
+                // Log the time conversion
+                if (timeSpentInMillis > 0) {
+                    Log.d("FirebaseScoreManager", "Time converted to milliseconds: " + timeSpentInMillis);
 
-                // Update the leaderboard (if needed)
-                updateLeaderboard(level, userId, timeSpentInMillis);
+                    // Save the user score for this level under "scores"
+                    updateUserScore(userId, level, timeSpentInMillis);
+
+                    // Update the leaderboard (if needed)
+                    updateLeaderboard(level, userId, timeSpentInMillis);
+                } else {
+                    Log.e("FirebaseScoreManager", "Invalid time format: " + timeSpent);
+                }
+
             } else {
-                Log.e("FirebaseScoreManager", "User email is null.");
+                Log.e("FirebaseScoreManager", "User email is null or empty.");
             }
         } else {
             Log.e("FirebaseScoreManager", "No user is logged in.");
         }
     }
+
 
     // Convert time from "MM:SS" format to milliseconds
     private long timeToMilliseconds(String time) {
@@ -66,9 +77,9 @@ public class FirebaseScoreManager {
 
     // Save user-specific score for the level
     private void updateUserScore(String userId, String level, long timeSpent) {
-        DatabaseReference scoreRef = database.child("scores").child(userId).child("level_" + level).child("timeSpent");
+        DatabaseReference scoreRef = database.child("scores").child(userId).child("Level_" + level).child("score");
 
-        Log.d("FirebaseScoreManager", "Writing to: scores/" + userId + "/level_" + level + "/timeSpent = " + timeSpent);
+        Log.d("FirebaseScoreManager", "Writing to: scores/" + userId + "/Level_" + level + "/score = " + timeSpent);
 
         scoreRef.setValue(timeSpent, (databaseError, databaseReference) -> {
             if (databaseError != null) {
@@ -81,15 +92,16 @@ public class FirebaseScoreManager {
 
     // Update global leaderboard (if necessary)
     private void updateLeaderboard(final String level, final String userId, final long timeSpent) {
-        final DatabaseReference leaderboardRef = database.child("best_scores").child("level_" + level);
+        final DatabaseReference leaderboardRef = database.child("best_scores").child("Level_" + level);
 
-        leaderboardRef.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
+        leaderboardRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                Long existingTime = snapshot.getValue(Long.class);
+                Long existingTime = snapshot.child("timeSpent").getValue(Long.class);
 
-                if (existingTime == null || existingTime > timeSpent) {
-                    leaderboardRef.child(userId).setValue(timeSpent, (databaseError, databaseReference) -> {
+                if (existingTime == null || timeSpent < existingTime) {
+                    leaderboardRef.child("username").setValue(userId);
+                    leaderboardRef.child("timeSpent").setValue(timeSpent, (databaseError, databaseReference) -> {
                         if (databaseError != null) {
                             Log.e("FirebaseScoreManager", "Leaderboard update failed: " + databaseError.getMessage());
                         } else {

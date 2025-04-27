@@ -109,4 +109,18 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("user_uid", uid);
         editor.apply();
     }
+
+    private boolean isUserAuthenticated() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        return user != null; // Returns true if the user is authenticated
+    }
+
+    // Now you can use the isUserAuthenticated method wherever you need to authenticate the user before saving data.
+    private void saveDataIfAuthenticated() {
+        if (isUserAuthenticated()) {
+            // Proceed with saving data, since the user is authenticated
+        } else {
+            Toast.makeText(this, "Please log in to save data.", Toast.LENGTH_SHORT).show();
+        }
+    }
 }

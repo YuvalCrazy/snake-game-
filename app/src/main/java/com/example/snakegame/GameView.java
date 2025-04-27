@@ -124,12 +124,12 @@ public class GameView extends View {
 
             if (mazeCount == 3) {  // After completing all 3 mazes
                 countDownTimer.cancel();  // Stop timer
-                saveLevelTimer();
+                saveLevelTimer();  // Save time spent for this level
 
-                currentLevel++;  // <--- Increment level
-                mazeCount = 0;   // <--- Reset maze count
+                currentLevel++;  // Increment level
+                mazeCount = 0;   // Reset maze count
 
-                adjustMazeSize();  // <--- Adjust maze size for new level
+                adjustMazeSize();  // Adjust maze size for the next level
 
                 // Start new level
                 Intent intent = new Intent(getContext(), LevelActivity.class);
@@ -139,16 +139,17 @@ public class GameView extends View {
                 return;
             }
 
-            // Continue to next maze in same level
+            // Continue to the next maze in the same level
             adjustMazeSize();
             createMaze();
             player = cells[0][0];
             gameOver = false;
             gameWon = false;
-            startTimer();  // <--- Reset the timer for the new maze
+            startTimer();  // Reset the timer for the new maze
             invalidate();
         }
     }
+
 
 
 
@@ -179,21 +180,21 @@ public class GameView extends View {
         String formattedTime = formatTime(timeSpentMillis);
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) return;
+        if (user == null) return; // No user logged in
 
         String email = user.getEmail();
-        if (email == null) return;
+        if (email == null) return; // No email associated with user
 
-        // Derive username from the email (this example replaces '.' with '_')
-        String formattedUsername = email.replace(".", "_");
+        String formattedUsername = email.replace(".", "_");  // Ensure valid Firebase keys
 
         String levelKey = "Level_" + currentLevel;
-
         DatabaseReference database = FirebaseDatabase.getInstance().getReference();
 
         // Save to "scores"
         database.child("scores").child(formattedUsername).child(levelKey).child("score")
-                .setValue(formattedTime);
+                .setValue(formattedTime)
+                .addOnSuccessListener(aVoid -> Log.d("Firebase", "Score saved successfully"))
+                .addOnFailureListener(e -> Log.e("Firebase", "Error saving score", e));
 
         // Save to "best_scores" only if it's better
         DatabaseReference bestScoreRef = database.child("best_scores").child(levelKey).child(formattedUsername);
@@ -205,11 +206,15 @@ public class GameView extends View {
             } else {
                 String previousTime = snapshot.getValue(String.class);
                 if (previousTime != null && isBetterTime(formattedTime, previousTime)) {
-                    bestScoreRef.setValue(formattedTime);
+                    bestScoreRef.setValue(formattedTime)
+                            .addOnSuccessListener(aVoid -> Log.d("Firebase", "Best score updated successfully"))
+                            .addOnFailureListener(e -> Log.e("Firebase", "Error updating best score", e));
                 }
             }
-        });
+        }).addOnFailureListener(e -> Log.e("Firebase", "Error retrieving best score", e));
     }
+
+
 
     // Converts milliseconds into a formatted string (e.g., "1:23")
     private String formatTime(long millis) {
@@ -365,18 +370,19 @@ public class GameView extends View {
 
     private void showLevelCompleteScreen() {
         // Save the time spent on the current level
-        saveLevelTimer();
+        saveLevelTimer();  // Store the score in Firebase
 
         // Create an intent to transition to LevelActivity
         Intent intent = new Intent(getContext(), LevelActivity.class);
 
         // Pass the current level and time spent as extras
         intent.putExtra("currentLevel", currentLevel);
-        intent.putExtra("timeSpent", timeLeftInMillis); // Pass the remaining time as time spent
+        intent.putExtra("timeSpent", timeLeftInMillis);  // Pass the remaining time as time spent
 
         // Start the LevelActivity
-        getContext().startActivity(intent);
+        getContext().startActivity(intent);  // Transition to LevelActivity
     }
+
 
 
 
