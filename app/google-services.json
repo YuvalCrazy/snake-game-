@@ -2,7 +2,8 @@
   "project_info": {
     "project_number": "28384331020",
     "project_id": "snake-login-10f36",
-    "storage_bucket": "snake-login-10f36.firebasestorage.app"
+    "storage_bucket": "snake-login-10f36.appspot.com",
+    "firebase_url": "https://snake-login-10f36-default-rtdb.europe-west1.firebasedatabase.app"
   },
   "client": [
     {
