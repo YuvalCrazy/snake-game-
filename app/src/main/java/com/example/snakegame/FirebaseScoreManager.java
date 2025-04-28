@@ -12,9 +12,12 @@ public class FirebaseScoreManager {
     private FirebaseAuth auth;
 
     private FirebaseScoreManager() {
-        database = FirebaseDatabase.getInstance().getReference();
+        database = FirebaseDatabase
+                .getInstance("https://snake-login-10f36-default-rtdb.europe-west1.firebasedatabase.app/")
+                .getReference();
         auth = FirebaseAuth.getInstance();
     }
+
 
     public static synchronized FirebaseScoreManager getInstance() {
         if (instance == null) {
