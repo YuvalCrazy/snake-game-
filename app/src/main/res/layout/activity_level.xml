@@ -7,40 +7,46 @@
     tools:context=".LevelActivity">
 
     <!-- Title text showing "Level" -->
+
+    <!-- TextView to display the current level -->
+
+    <!-- RecyclerView to display the score records -->
+
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="252dp"
         android:text="Level:"
-        app:layout_constraintBottom_toTopOf="@+id/level"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/level"
+        app:layout_constraintHorizontal_bias="0.478"
+        app:layout_constraintStart_toStartOf="@+id/level"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- TextView to display the current level -->
     <TextView
         android:id="@+id/level"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="1"
         android:textSize="25sp"
-        app:layout_constraintBottom_toTopOf="@+id/button3"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
-    <!-- RecyclerView to display the score records -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="64dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button3" />
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
 
     <!-- Button to initiate the level or game -->
+
+    <!-- Title text for "Top 10" section -->
+
     <Button
         android:id="@+id/button3"
         android:layout_width="wrap_content"
@@ -48,10 +54,11 @@
         android:text="Ready  (:"
         app:layout_constraintBottom_toTopOf="@+id/recyclerView"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/level" />
+        app:layout_constraintTop_toBottomOf="@+id/level"
+        app:layout_constraintVertical_bias="0.752" />
 
-    <!-- Title text for "Top 10" section -->
     <TextView
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
@@ -59,7 +66,9 @@
         android:text="Top 10:"
         app:layout_constraintBottom_toTopOf="@+id/recyclerView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button3"
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/timerTextView"
