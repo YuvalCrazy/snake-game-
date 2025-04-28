@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
                             saveUserUID(user.getUid());
                             Log.d("Register", "User Registered Successfully.");
                             Toast.makeText(MainActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(MainActivity.this, leaderboard.class));
+                            startActivity(new Intent(MainActivity.this, game.class));
                         } else {
                             Toast.makeText(MainActivity.this, "Sign Up Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                         }
