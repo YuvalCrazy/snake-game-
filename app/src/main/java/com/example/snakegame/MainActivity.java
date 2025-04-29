@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
                             saveUserUID(user.getUid());
                             Log.d("Login", "Login Successful.");
                             Toast.makeText(MainActivity.this, "Login Successful.", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(MainActivity.this, game.class));
+                            startActivity(new Intent(MainActivity.this, Leaderboard.class));
                         } else {
                             Toast.makeText(MainActivity.this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                         }
@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
                             saveUserUID(user.getUid());
                             Log.d("Register", "User Registered Successfully.");
                             Toast.makeText(MainActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(MainActivity.this, game.class));
+                            startActivity(new Intent(MainActivity.this, Leaderboard.class));
                         } else {
                             Toast.makeText(MainActivity.this, "Sign Up Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                         }

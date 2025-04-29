@@ -12,28 +12,28 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SnakeGame"
         tools:targetApi="31">
+
         <activity
             android:name=".game"
             android:exported="false" />
+
         <activity
             android:name=".LevelActivity"
-            android:exported="false" >
+            android:exported="false" />
 
-        </activity>
         <activity
-            android:name=".leaderboard"
-            android:exported="false" >
+            android:name=".Leaderboard"
+            android:exported="false" />
 
-        </activity>
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
