@@ -1,7 +1,10 @@
 package com.example.snakegame;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,6 +21,8 @@ public class Leaderboard extends AppCompatActivity {
     private ScoreAdapter adapter;
     private List<Score> scoreList = new ArrayList<>();
     private DatabaseReference database;
+    private Button levelButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,11 +33,20 @@ public class Leaderboard extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ScoreAdapter(scoreList);
         recyclerView.setAdapter(adapter);
+        levelButton = findViewById(R.id.button2);
 
         database = FirebaseDatabase.getInstance("https://snake-login-10f36-default-rtdb.europe-west1.firebasedatabase.app/")
                 .getReference("scores");
 
         loadLeaderboard();
+
+        levelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Leaderboard.this, LevelActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     private void loadLeaderboard() {
