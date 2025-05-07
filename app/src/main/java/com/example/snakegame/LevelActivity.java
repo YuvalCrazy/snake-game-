@@ -4,7 +4,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -16,6 +19,7 @@ public class LevelActivity extends AppCompatActivity {
     private TextView levelTextView;
     private RecyclerView rv;
     private ScoreAdapter scoreAdpater;
+    private Button startGameButton;
 
     List<Score> scoreList;
 
@@ -28,11 +32,23 @@ public class LevelActivity extends AppCompatActivity {
         timerTextView = findViewById(R.id.timerTextView);
         levelTextView = findViewById(R.id.level);
         rv = findViewById(R.id.recyclerView);
+        startGameButton = findViewById(R.id.button3);
 
         scoreList = new ArrayList<>();
         scoreAdpater = new ScoreAdapter(scoreList);
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(scoreAdpater);
+
+
+
+        startGameButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // When button is clicked, start the game
+                Intent intent = new Intent(LevelActivity.this, game.class);  // Replace with your actual GameActivity
+                startActivity(intent);
+            }
+        });
 
 
 
