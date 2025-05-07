@@ -6,23 +6,19 @@
     android:layout_height="match_parent"
     tools:context=".LevelActivity">
 
-    <!-- Title text showing "Level" -->
-
-    <!-- TextView to display the current level -->
-
-    <!-- RecyclerView to display the score records -->
-
+    <!-- TextView to display "Level" label -->
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="252dp"
+        android:layout_marginTop="172dp"
         android:text="Level:"
         app:layout_constraintEnd_toEndOf="@+id/level"
         app:layout_constraintHorizontal_bias="0.478"
         app:layout_constraintStart_toStartOf="@+id/level"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- TextView to display current level number -->
     <TextView
         android:id="@+id/level"
         android:layout_width="wrap_content"
@@ -34,6 +30,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
+    <!-- RecyclerView to display the score records -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
@@ -43,10 +40,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
-    <!-- Button to initiate the level or game -->
-
-    <!-- Title text for "Top 10" section -->
-
+    <!-- Button to initiate the game or level -->
     <Button
         android:id="@+id/button3"
         android:layout_width="wrap_content"
@@ -59,6 +53,7 @@
         app:layout_constraintTop_toBottomOf="@+id/level"
         app:layout_constraintVertical_bias="0.752" />
 
+    <!-- TextView to display "Top 10" title -->
     <TextView
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
@@ -70,6 +65,17 @@
         app:layout_constraintTop_toBottomOf="@+id/button3"
         app:layout_constraintVertical_bias="1.0" />
 
+    <!-- TextView to display timer title "your time:" -->
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="your time:"
+        app:layout_constraintBottom_toTopOf="@+id/timerTextView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Timer display TextView -->
     <TextView
         android:id="@+id/timerTextView"
         android:layout_width="wrap_content"
@@ -80,16 +86,7 @@
         app:layout_constraintBottom_toTopOf="@+id/button3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/level" />
-
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="your time:"
-        app:layout_constraintBottom_toTopOf="@+id/timerTextView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
+        app:layout_constraintTop_toBottomOf="@+id/level"
+        app:layout_constraintVertical_bias="1.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
