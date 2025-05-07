@@ -18,11 +18,13 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-
 public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
-    private Button login, signin;
-    private EditText email, password;
+    private Button loginButton, signupButton;
+    private EditText emailEditText, passwordEditText;
+
+    private static final String PREFS_NAME = "UserPrefs";
+    private static final String KEY_UID = "user_uid";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,41 +32,49 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mAuth = FirebaseAuth.getInstance();
-        login = findViewById(R.id.buttonlog);
-        signin = findViewById(R.id.buttonsign);
-        email = findViewById(R.id.editTextTextEmailAddress);
-        password = findViewById(R.id.editTextTextPassword);
+        loginButton = findViewById(R.id.buttonlog);
+        signupButton = findViewById(R.id.buttonsign);
+        emailEditText = findViewById(R.id.editTextTextEmailAddress);
+        passwordEditText = findViewById(R.id.editTextTextPassword);
 
-        signin.setOnClickListener(new View.OnClickListener() {
+        // NO auto-login — user will always see this screen first
+
+        loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String emailText = email.getText().toString().trim();
-                String passwordText = password.getText().toString().trim();
+                String emailText = emailEditText.getText().toString().trim();
+                String passwordText = passwordEditText.getText().toString().trim();
 
-                if (emailText.isEmpty() || passwordText.isEmpty()) {
-                    Toast.makeText(MainActivity.this, "Please enter email and password!", Toast.LENGTH_SHORT).show();
+                if (!validateInput(emailText, passwordText)) return;
+
+                loginUser(emailText, passwordText);
+            }
+        });
+
+        signupButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String emailText = emailEditText.getText().toString().trim();
+                String passwordText = passwordEditText.getText().toString().trim();
+
+                if (!validateInput(emailText, passwordText)) return;
+
+                if (passwordText.length() < 6) {
+                    Toast.makeText(MainActivity.this, "Password must be at least 6 characters!", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                mAuth.fetchSignInMethodsForEmail(emailText)
-                        .addOnCompleteListener(new OnCompleteListener<com.google.firebase.auth.SignInMethodQueryResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<com.google.firebase.auth.SignInMethodQueryResult> task) {
-                                if (task.isSuccessful()) {
-                                    boolean isExistingUser = !task.getResult().getSignInMethods().isEmpty();
-
-                                    if (isExistingUser) {
-                                        loginUser(emailText, passwordText);
-                                    } else {
-                                        registerUser(emailText, passwordText);
-                                    }
-                                } else {
-                                    Toast.makeText(MainActivity.this, "Error checking user: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                                }
-                            }
-                        });
+                registerUser(emailText, passwordText);
             }
         });
+    }
+
+    private boolean validateInput(String email, String password) {
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(MainActivity.this, "Please enter email and password!", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
     }
 
     private void loginUser(String email, String password) {
@@ -74,10 +84,13 @@ public class MainActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             FirebaseUser user = mAuth.getCurrentUser();
-                            saveUserUID(user.getUid());
+                            if (user != null) {
+                                saveUserUID(user.getUid());
+                            }
                             Log.d("Login", "Login Successful.");
                             Toast.makeText(MainActivity.this, "Login Successful.", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(MainActivity.this, Leaderboard.class));
+                            finish();
                         } else {
                             Toast.makeText(MainActivity.this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                         }
@@ -92,10 +105,13 @@ public class MainActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             FirebaseUser user = mAuth.getCurrentUser();
-                            saveUserUID(user.getUid());
+                            if (user != null) {
+                                saveUserUID(user.getUid());
+                            }
                             Log.d("Register", "User Registered Successfully.");
                             Toast.makeText(MainActivity.this, "Account Created Successfully!", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(MainActivity.this, Leaderboard.class));
+                            finish();
                         } else {
                             Toast.makeText(MainActivity.this, "Sign Up Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                         }
@@ -104,23 +120,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveUserUID(String uid) {
-        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("user_uid", uid);
+        editor.putString(KEY_UID, uid);
         editor.apply();
-    }
-
-    private boolean isUserAuthenticated() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        return user != null; // Returns true if the user is authenticated
-    }
-
-    // Now you can use the isUserAuthenticated method wherever you need to authenticate the user before saving data.
-    private void saveDataIfAuthenticated() {
-        if (isUserAuthenticated()) {
-            // Proceed with saving data, since the user is authenticated
-        } else {
-            Toast.makeText(this, "Please log in to save data.", Toast.LENGTH_SHORT).show();
-        }
     }
 }
