@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -49,9 +50,8 @@ public class LevelActivity extends AppCompatActivity {
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(scoreAdpater);
 
-        // ✅ Assign to field, not local variable
-        currentLevel = getIntent().getIntExtra("currentLevel", 1);
         long timeSpent = getIntent().getLongExtra("timeSpent", 0);
+        currentLevel = getIntent().getIntExtra("currentLevel", 1);
 
         levelTextView.setText("Level: " + currentLevel);
         timerTextView.setText("Time: " + formatTime(timeSpent));
@@ -65,6 +65,7 @@ public class LevelActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(LevelActivity.this, game.class);
+                Log.d("LevelActivity","sending Game View currentLevel="+currentLevel);
                 intent.putExtra("currentLevel", currentLevel);  // ✅ This will now be the correct level
                 startActivity(intent);
             }
@@ -151,4 +152,5 @@ public class LevelActivity extends AppCompatActivity {
         int minutes = (int) ((timeInMillis / (1000 * 60)) % 60);
         return String.format("%02d:%02d", minutes, seconds);
     }
+
 }

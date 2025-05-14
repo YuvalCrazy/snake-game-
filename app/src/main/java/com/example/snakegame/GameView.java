@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -70,6 +69,13 @@ public class GameView extends View {
         timerPaint.setTextSize(96); // Larger font size (adjust as necessary)
         timerPaint.setTextAlign(Paint.Align.LEFT); // Align text to the left
 
+        // Retrieve data from the Intent (currentLevel)
+        if (context instanceof Activity) {
+            Intent intent = ((Activity) context).getIntent();
+            currentLevel = intent.getIntExtra("currentLevel", 1); // Default to 1 if not passed
+            Log.d("Game View","Received currentLevel="+currentLevel);
+        }
+
         startTimer();
         createMaze();
     }
@@ -122,8 +128,9 @@ public class GameView extends View {
         if (gameWon) {
             mazeCount++;  // Increment maze count
 
-            if (mazeCount == 3) {  // After completing all 3 mazes
-                countDownTimer.cancel();  // Stop timer
+            if (mazeCount == 1) {  // After completing all 3 mazes
+                countDownTimer.cancel();// Stop timer
+                completeLevel();
                 saveLevelTimer();  // Save time spent for this level
 
                 currentLevel++;  // Increment level
