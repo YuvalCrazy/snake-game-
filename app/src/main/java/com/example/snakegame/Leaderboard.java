@@ -23,7 +23,6 @@ public class Leaderboard extends AppCompatActivity {
     private DatabaseReference database;
     private Button levelButton;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,9 +59,26 @@ public class Leaderboard extends AppCompatActivity {
                     int levelCount = 0;
 
                     for (DataSnapshot levelSnapshot : userSnapshot.getChildren()) {
-                        String score = levelSnapshot.child("score").getValue(String.class);
-                        if (score != null) {
-                            totalTime += convertScoreToMillis(score);
+                        // Fetch the score as an Object instead of directly as String
+                        Object scoreObj = levelSnapshot.child("score").getValue();
+
+                        if (scoreObj != null) {
+                            long scoreMillis = 0;
+
+                            // Check if the score is a String (MM:SS format)
+                            if (scoreObj instanceof String) {
+                                String scoreString = (String) scoreObj;
+                                scoreMillis = convertScoreToMillis(scoreString); // Convert MM:SS to milliseconds
+                            }
+                            // Check if the score is a Long (milliseconds)
+                            else if (scoreObj instanceof Long) {
+                                scoreMillis = (Long) scoreObj;
+                            } else {
+                                // If the score is neither a String nor Long, log the error
+                                Log.e("Leaderboard", "Unexpected score type: " + scoreObj.getClass().getSimpleName());
+                            }
+
+                            totalTime += scoreMillis;
                             levelCount++;
                         }
                     }
@@ -89,6 +105,7 @@ public class Leaderboard extends AppCompatActivity {
                     scoreList.add(new Score(email, timeFormatted));
                 }
 
+                // Notify the adapter that the data has changed
                 adapter.notifyDataSetChanged();
             }
 

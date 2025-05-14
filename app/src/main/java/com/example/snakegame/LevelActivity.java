@@ -20,7 +20,6 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class LevelActivity extends AppCompatActivity {
@@ -30,6 +29,7 @@ public class LevelActivity extends AppCompatActivity {
     private RecyclerView rv;
     private ScoreAdapter scoreAdpater;
     private Button startGameButton;
+    private int currentLevel;
 
     private List<Score> scoreList;
     private DatabaseReference database;
@@ -37,9 +37,8 @@ public class LevelActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_level);  // The layout for the level activity
+        setContentView(R.layout.activity_level);
 
-        // Initialize the TextViews and RecyclerView
         timerTextView = findViewById(R.id.timerTextView);
         levelTextView = findViewById(R.id.level);
         rv = findViewById(R.id.recyclerView);
@@ -50,34 +49,28 @@ public class LevelActivity extends AppCompatActivity {
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(scoreAdpater);
 
-        // Firebase Database Reference
+        // ✅ Assign to field, not local variable
+        currentLevel = getIntent().getIntExtra("currentLevel", 1);
+        long timeSpent = getIntent().getLongExtra("timeSpent", 0);
+
+        levelTextView.setText("Level: " + currentLevel);
+        timerTextView.setText("Time: " + formatTime(timeSpent));
+
         database = FirebaseDatabase.getInstance("https://snake-login-10f36-default-rtdb.europe-west1.firebasedatabase.app/")
                 .getReference("scores");
 
-        // Fetch and display scores from Firebase
         loadLeaderboard();
 
-        // Set up start game button click
         startGameButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // When button is clicked, start the game
-                Intent intent = new Intent(LevelActivity.this, game.class);  // Replace with your actual GameActivity
+                Intent intent = new Intent(LevelActivity.this, game.class);
+                intent.putExtra("currentLevel", currentLevel);  // ✅ This will now be the correct level
                 startActivity(intent);
             }
         });
-
-        // Retrieve the timer value and level data passed from the previous activity
-        long timeSpent = getIntent().getLongExtra("timeSpent", 0);  // Default to 0 if no value is passed
-        int currentLevel = getIntent().getIntExtra("currentLevel", 1);  // Default to level 1 if no value is passed
-
-        // Format the time spent (in milliseconds) to a "minutes:seconds" format
-        String formattedTime = formatTime(timeSpent);
-
-        // Display the level and formatted time
-        levelTextView.setText("Level: " + currentLevel);
-        timerTextView.setText("Time: " + formattedTime);
     }
+
 
     private void loadLeaderboard() {
         // Retrieve data from Firebase
@@ -92,10 +85,22 @@ public class LevelActivity extends AppCompatActivity {
 
                     // Loop through all levels for the user
                     for (DataSnapshot levelSnapshot : userSnapshot.getChildren()) {
-                        String score = levelSnapshot.child("score").getValue(String.class);
-                        if (score != null) {
-                            totalTime += convertScoreToMillis(score);
-                            levelCount++;
+                        // Check if the score is stored as a Long or String
+                        if (levelSnapshot.child("score").getValue() instanceof Long) {
+                            // If score is a Long (in milliseconds)
+                            Long scoreLong = levelSnapshot.child("score").getValue(Long.class);
+                            if (scoreLong != null) {
+                                totalTime += scoreLong;  // Add the score
+                                levelCount++;
+                            }
+                        } else if (levelSnapshot.child("score").getValue() instanceof String) {
+                            // If score is a String (in MM:SS format)
+                            String scoreStr = levelSnapshot.child("score").getValue(String.class);
+                            if (scoreStr != null) {
+                                long scoreMillis = convertScoreToMillis(scoreStr);  // Convert to milliseconds
+                                totalTime += scoreMillis;
+                                levelCount++;
+                            }
                         }
                     }
 
