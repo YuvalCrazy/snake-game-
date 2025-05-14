@@ -68,6 +68,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            // User is already logged in, navigate to Leaderboard
+            startActivity(new Intent(MainActivity.this, Leaderboard.class));
+            finish();
+        }
+    }
 
     private boolean validateInput(String email, String password) {
         if (email.isEmpty() || password.isEmpty()) {

@@ -469,12 +469,8 @@ public class GameView extends View {
         canvas.drawRect(exit.col * cellSize + margin, exit.row * cellSize + margin,
                 (exit.col + 1) * cellSize - margin, (exit.row + 1) * cellSize - margin, exitPaint);
 
-        // If game over or won, stop the game and show message
-        if (gameOver) {
-            showEndGamePopup(false); // Show "Game Over" message
-        } else if (gameWon && !(currentLevel == 10 && mazeCount == 2)) {
-            showEndGamePopup(true); // Show "You Win!" message for all levels except the last one
-        }
+
+
     }
     private void completeLevel() {
         // Save the time spent for the level (in milliseconds)
@@ -491,16 +487,7 @@ public class GameView extends View {
 
 
 
-    private void showEndGamePopup(boolean isWin) {
-        // Create and show the pop-up dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle(isWin ? "You Win!" : "Game Over") // Set title based on win/lose
-                .setMessage("Would you like to restart?")
-                .setPositiveButton("Restart", (dialog, which) -> restartGame()) // Restart the game
-                .setNegativeButton("Exit", (dialog, which) -> ((Activity) getContext()).finish()) // Exit the game
-                .setCancelable(false) // Disable dismissing by tapping outside
-                .show();
-    }
+
 
 
 
