@@ -3,8 +3,11 @@ package com.example.snakegame;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -42,6 +45,27 @@ public class LevelActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        boolean showTrophy = getIntent().getBooleanExtra("showTrophy", false);
+
+        if (showTrophy) {
+            // Show trophy animation
+            TrophyView trophyView = new TrophyView(this);
+
+            trophyView.setLayoutParams(new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+
+            ViewGroup rootView = (ViewGroup) getWindow().getDecorView();
+            rootView.addView(trophyView);
+            trophyView.startAnimation();
+
+            // Delay removal of trophy view
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                rootView.removeView(trophyView);
+            }, 5000); // 5-second delay
+        }
     }
 
 

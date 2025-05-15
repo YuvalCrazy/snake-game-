@@ -142,6 +142,7 @@ public class GameView extends View {
                 Intent intent = new Intent(getContext(), LevelActivity.class);
                 intent.putExtra("timeSpent", timeLeftInMillis);
                 intent.putExtra("currentLevel", currentLevel);
+                intent.putExtra("showTrophy", true);
                 getContext().startActivity(intent);
                 return;
             }
@@ -385,7 +386,7 @@ public class GameView extends View {
         // Pass the current level and time spent as extras
         intent.putExtra("currentLevel", currentLevel);
         intent.putExtra("timeSpent", timeLeftInMillis);  // Pass the remaining time as time spent
-
+        intent.putExtra("showTrophy", true);
         // Start the LevelActivity
         getContext().startActivity(intent);  // Transition to LevelActivity
     }
@@ -482,6 +483,7 @@ public class GameView extends View {
         Intent intent = new Intent(getContext(), LevelActivity.class);
         intent.putExtra("timeSpent", timeSpent);  // Pass the time spent for the level
         intent.putExtra("currentLevel", currentLevel);  // Pass the current level
+        intent.putExtra("showTrophy", true);
         getContext().startActivity(intent);  // Transition to LevelActivity
     }
 
