@@ -128,7 +128,7 @@ public class GameView extends View {
         if (gameWon) {
             mazeCount++;  // Increment maze count
 
-            if (mazeCount == 1) {  // After completing all 3 mazes
+            if (mazeCount == 3) {  // After completing all 3 mazes
                 countDownTimer.cancel();// Stop timer
                 completeLevel();
                 saveLevelTimer();  // Save time spent for this level
