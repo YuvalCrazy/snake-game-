@@ -184,7 +184,7 @@ public class GameView extends View {
     }
 
     private void saveLevelTimer() {
-        long timeSpentMillis = TOTAL_TIME - timeLeftInMillis;
+        long timeSpentMillis = timeLeftInMillis;
         String formattedTime = formatTime(timeSpentMillis);
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
