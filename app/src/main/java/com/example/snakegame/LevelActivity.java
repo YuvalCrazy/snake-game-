@@ -15,7 +15,7 @@ public class LevelActivity extends AppCompatActivity {
 
     private TextView timerTextView;
     private TextView levelTextView;
-    private Button startGameButton;
+    private Button startGameButton, leaderboardButton;
     private int currentLevel;
 
 
@@ -27,6 +27,8 @@ public class LevelActivity extends AppCompatActivity {
         timerTextView = findViewById(R.id.timerTextView);
         levelTextView = findViewById(R.id.level);
         startGameButton = findViewById(R.id.button3);
+        leaderboardButton = findViewById(R.id.buttonleaderboard);
+
 
 
 
@@ -42,6 +44,14 @@ public class LevelActivity extends AppCompatActivity {
                 Intent intent = new Intent(LevelActivity.this, game.class);
                 Log.d("LevelActivity","sending Game View currentLevel="+currentLevel);
                 intent.putExtra("currentLevel", currentLevel);  // ✅ This will now be the correct level
+                startActivity(intent);
+            }
+        });
+
+        leaderboardButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LevelActivity.this, Leaderboard.class);
                 startActivity(intent);
             }
         });
